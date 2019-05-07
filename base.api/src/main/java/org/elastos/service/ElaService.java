@@ -163,7 +163,7 @@ public class ElaService {
         for(int i=0;i< outputs.length;i++){
             spend += outputs[i].getAmt();
         }
-        long left = total - spend - new BigDecimal(basicConfiguration.FEE()).multiply(new BigDecimal(ELA_TO_SELA)).longValue();
+        long left = total - spend - Math.round(new BigDecimal(basicConfiguration.FEE()).multiply(new BigDecimal(ELA_TO_SELA)).longValue());
         HdTxEntity.Output leftoutput = new HdTxEntity.Output();
         leftoutput.setAddr(inputs[0]);
         leftoutput.setAmt(left);
