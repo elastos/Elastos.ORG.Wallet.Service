@@ -156,7 +156,7 @@ public class ElaService {
         for(int i=0;i< inputs.length;i++){
             String input = inputs[i];
             Map<String,Object> balance = (Map)JSON.parse(getBalance(input));
-            total += Double.valueOf(balance.get("result") +"") * ELA_TO_SELA;
+            total += Math.round(Double.valueOf(balance.get("result") +"") * ELA_TO_SELA);
         }
         long spend = 0;
         HdTxEntity.Output[] outputs = hdTxEntity.getOutputs();
@@ -164,6 +164,7 @@ public class ElaService {
             spend += outputs[i].getAmt();
         }
         long left = total - spend - Math.round(new BigDecimal(basicConfiguration.FEE()).multiply(new BigDecimal(ELA_TO_SELA)).longValue());
+        System.out.println("total,spend,left,other:"+total+","+spend+","+left+","+Math.round(new BigDecimal(basicConfiguration.FEE()).multiply(new BigDecimal(ELA_TO_SELA)).longValue()));
         HdTxEntity.Output leftoutput = new HdTxEntity.Output();
         leftoutput.setAddr(inputs[0]);
         leftoutput.setAmt(left);
@@ -172,9 +173,8 @@ public class ElaService {
         desc[desc.length -1] = leftoutput;
         hdTxEntity.setOutputs(desc);
         List<List<Map>> utxoList = remakeHdEntity(hdTxEntity);
-
+        logger.debug(JSON.toJSONString(new ReturnMsgEntity().setResult(genHdTx(hdTxEntity, utxoList)).setStatus(retCodeConfiguration.SUCC())));
         return JSON.toJSONString(new ReturnMsgEntity().setResult(genHdTx(hdTxEntity, utxoList)).setStatus(retCodeConfiguration.SUCC()));
-
     }
 
 
