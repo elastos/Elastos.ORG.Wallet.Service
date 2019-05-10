@@ -13,7 +13,7 @@ node.balanceByAddr       = /api/v1/asset/balances/
 node.balanceByAsset      = /api/v1/asset/balance/
 node.utxoByAsset         = /api/v1/asset/utxo/
 node.utxoByAddr          = /api/v1/asset/utxos/
-node.sendRawTransaction  = /api/v1/sendtransaction
+node.sendRawTransaction  = /api/v1/transaction
 node.transactionPool     = /api/v1/transactionpool
 node.restart             = /api/v1/restart
 
