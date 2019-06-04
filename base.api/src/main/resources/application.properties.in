@@ -33,6 +33,12 @@ basic.CROSS_DOMAIN       = false
 ## application
 server.port              = 8080
 
+## friend chain config
+friendchain.config.ioex_prefix       = @FRIEND_PREFIX@
+friendchain.config.ioex_assetId      = 61ccbfae9f8ce9660a71321041917139cb72cbb85bd105e92f0ed32cb1d1298f
+friendchain.config.ioex_fee          = 0.000001
+friendchain.config.ioex_satoshi      = 100000000
+
 ## log
 logging.level.root       =INFO
 logging.level.org.elastos=DEBUG
