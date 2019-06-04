@@ -1314,6 +1314,178 @@ using this api you can transfer money from mainchain to did sidechain.
           "status": 200
       }
 
+.. friendchain-service:
+
+Friend Chain Service API
+=================================
+First add friend chain configuration in the configuration file::
+
+    friendchain.config.${friendChain_Symbol}_prefix       =${friendChain_Node_Restful_URL}
+    friendchain.config.${friendChain_Symbol}_assetId      =${friendChain_Asset_Id}
+    friendchain.config.${friendChain_Symbol}_fee          =${friendChain_Tx_Fee}
+    friendchain.config.${friendChain_Symbol}_satoshi      =${friendChain_Minimum_Unit}
+
+Example::
+
+    friendchain.config.ioex_prefix       =http://54.92.80.93:20334
+    friendchain.config.ioex_assetId      =61ccbfae9f8ce9660a71321041917139cb72cbb85bd105e92f0ed32cb1d1298f
+    friendchain.config.ioex_fee          =0.000001
+    friendchain.config.ioex_satoshi      =100000000
+
+
+
+Check the current network block height
+-----------------------------------------
+tells you the current block height of the network
+
+.. http:get:: /api/1/${friendChain_Symbol}/currHeight
+
+   **Example request**:
+
+   .. sourcecode:: http
+
+    GET /api/1/${friendChain_Symbol}/currHeight HTTP/1.1
+    Host: localhost
+
+   **Example response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Vary: Accept
+      Content-Type: application/json
+
+      {
+        "result": 128797,
+        "status": 200
+      }
+
+   :statuscode 200:   no error
+   :statuscode 400:   bad request
+   :statuscode 404:   not found request
+   :statuscode 500:   internal error
+   :statuscode 10001: process error
+
+
+get the balance of address
+-----------------------------------------
+get the balance of the provided public address
+
+.. http:get:: /api/1/${friendChain_Symbol}/balance/(string:`public_address`)
+
+   **Example request**:
+
+   .. sourcecode:: http
+
+    GET /api/1/${friendChain_Symbol}/balance/EbunxcqXie6UExs5SXDbFZxr788iGGvAs9 HTTP/1.1
+    Host: localhost
+
+   **Example response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Vary: Accept
+      Content-Type: application/json
+
+      {
+          "result":"2.11059400",
+          "status":200
+      }
+
+   :statuscode 200:   no error
+   :statuscode 400:   bad request
+   :statuscode 404:   not found request
+   :statuscode 500:   internal error
+   :statuscode 10001: process error
+
+
+create offline transaction
+-----------------------------------------
+create a offline transaction utxo json data , you should sign it using private key
+
+.. http:post:: /api/1/${friendChain_Symbol}/createTx
+
+   **Example request**:
+
+   .. sourcecode:: http
+
+    POST /api/1/${friendChain_Symbol}/createTx HTTP/1.1
+    Host: localhost
+
+      {
+          "inputs"  : ["EU3e23CtozdSvrtPzk9A1FeC9iGD896DdV"],
+           "outputs" : [{
+                  "addr":"EPzxJrHefvE7TCWmEGQ4rcFgxGeGBZFSHw",
+                   "amt" :1000
+               }]
+      }
+
+   **Example response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+            "Transactions": [
+                {
+                    "UTXOInputs": [
+                        {
+                            "address": "EU3e23CtozdSvrtPzk9A1FeC9iGD896DdV",
+                            "txid": "fa9bcb8b2f3a3a1e627284ad8425faf70fa64146b88a3aceac538af8bfeffd91",
+                            "index": 1
+                        }
+                    ],
+                    "Fee": 100,
+                    "Outputs": [
+                        {
+                            "amount": 1000,
+                            "address": "EPzxJrHefvE7TCWmEGQ4rcFgxGeGBZFSHw"
+                        },
+                        {
+                            "amount": 99997800,
+                            "address": "EU3e23CtozdSvrtPzk9A1FeC9iGD896DdV"
+                        }
+                    ]
+                }
+            ]
+        },
+        "status": 200
+    }
+
+send offline transaction
+-----------------------------------------
+send raw transaction
+
+.. http:post:: /api/1/${friendChain_Symbol}/sendRawTx
+
+   **Example request**:
+
+   .. sourcecode:: http
+
+    POST /api/1/${friendChain_Symbol}/sendRawTx HTTP/1.1
+    Host: localhost
+
+      {
+         "data":"0200010013313637333832373132343538363832353937350191FDEFBFF88A53ACCE3A8AB84641A60FF7FA2584AD8472621E3A3A2F8BCB9BFA01000000000002B037DB964A231458D2D6FFD5EA18944C4F90E63D547C5D3B9874DF66A4EAD0A3E80300000000000000000000214B177C93439E1E31B1CDA7C3B290F977C74CD0BFB037DB964A231458D2D6FFD5EA18944C4F90E63D547C5D3B9874DF66A4EAD0A368D8F5050000000000000000217779F85469B90D2F648D6BA771FB641D1782715E000000000141407009A5DAB9A8730ED424EF50217180D25AB81F0BB6E8257A672F9618F3CF13FD32D114DE171460C23532319A85614C460E83699C833E576B5C4782232299A2DF232103293CD3A3359B65FEA091CB6260675BD03A3C5E29CFFB504136A508E9BBBD5A8BAC"
+      }
+
+   **Example response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": "1f4432635bcf8c347f2bc20b7906c8c6c195f51beb3426e5f8d6a9e4cc073cf3",
+          "status": 200
+      }
+
+
 .. samples:
 
 Offline transaction samples
@@ -1359,3 +1531,4 @@ this api will return the signed raw transaction. the return value(if not empty) 
 3.send offline raw transaction
 
 The API SendRawTx_
+
