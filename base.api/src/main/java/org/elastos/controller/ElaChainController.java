@@ -110,6 +110,13 @@ public class ElaChainController extends BaseController{
         return call( hash ,String.class,"getTransactionByHash",service);
     }
 
+    @RequestMapping(value = "/balance/{address}",method = RequestMethod.GET)
+    @ResponseBody
+    public String getBalance(@PathVariable("address") String address){
+
+        return call(address,String.class,"getBalance",service);
+    }
+
     @RequestMapping(value = "/{friendChainShortName}/balance/{address}",method = RequestMethod.GET)
     @ResponseBody
     public String getFriendChainShortNameBalance(@PathVariable("address") String address,@PathVariable("friendChainShortName") String friendChainShortName){
