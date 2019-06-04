@@ -14,10 +14,7 @@ import com.alibaba.fastjson.JSON;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.elastos.api.SingleSignTransaction;
-import org.elastos.conf.BasicConfiguration;
-import org.elastos.conf.DidConfiguration;
-import org.elastos.conf.NodeConfiguration;
-import org.elastos.conf.RetCodeConfiguration;
+import org.elastos.conf.*;
 import org.elastos.ela.*;
 import org.elastos.entity.*;
 import org.elastos.exception.ApiRequestDataException;
@@ -50,6 +47,8 @@ public class ElaService {
     private RetCodeConfiguration retCodeConfiguration;
     @Autowired
     private DidConfiguration didConfiguration;
+    @Autowired
+    private FriendChainConfiguration friendChainConfiguration;
 
     private static Logger logger = LoggerFactory.getLogger(ElaService.class);
 
@@ -117,6 +116,24 @@ public class ElaService {
         return JSON.toJSONString(new ReturnMsgEntity().setResult(msg.getResult()).setStatus(status));
     }
 
+    public String sendFriendChainRawTx(RawTxEntity rawTxEntity){
+        String shortName = rawTxEntity.getFriendChainShortName();
+        String node_prefix = (String)friendChainConfiguration.getConfig().get(shortName+"_prefix");
+        if (StrKit.isBlank(node_prefix)){
+            throw new ApiRequestDataException("No Such Friend chain");
+        }
+        String rawTx = JSON.toJSONString(rawTxEntity);
+        ChainType type = rawTxEntity.getType();
+        ReturnMsgEntity.ELAReturnMsg msg = JsonUtil.jsonStr2Entity(HttpKit.post(node_prefix + nodeConfiguration.sendNakedRawTransaction(),rawTx),ReturnMsgEntity.ELAReturnMsg.class);
+        long status = 0;
+        if(msg.getError() == 0){
+            status = retCodeConfiguration.SUCC();
+        }else{
+            status = retCodeConfiguration.PROCESS_ERROR();
+        }
+        return JSON.toJSONString(new ReturnMsgEntity().setResult(msg.getResult()).setStatus(status));
+    }
+
     public String getTxsByTxIds(List<String> strList){
         List<Object> results = new ArrayList<>();
         for(int i=0;i<strList.size();i++){
@@ -142,6 +159,20 @@ public class ElaService {
 
     }
 
+    public String genFriendChainHdTx(HdTxEntity hdTxEntity) throws Exception {
+
+        String shortName = hdTxEntity.getFriendChainShortName();
+        String node_prefix = (String)friendChainConfiguration.getConfig().get(shortName+"_prefix");
+        if (StrKit.isBlank(node_prefix)){
+            throw new ApiRequestDataException("No Such Friend chain");
+        }
+
+        List<List<Map>> utxoList = remakeHdEntity(hdTxEntity,node_prefix);
+
+        return JSON.toJSONString(new ReturnMsgEntity().setResult(genHdTx(hdTxEntity, utxoList,shortName)).setStatus(retCodeConfiguration.SUCC()));
+
+    }
+
     private static final Long ELA_TO_SELA = 100000000l;
     /**
      * genHdTx info
@@ -164,7 +195,6 @@ public class ElaService {
             spend += outputs[i].getAmt();
         }
         long left = total - spend - Math.round(new BigDecimal(basicConfiguration.FEE()).multiply(new BigDecimal(ELA_TO_SELA)).longValue());
-        System.out.println("total,spend,left,other:"+total+","+spend+","+left+","+Math.round(new BigDecimal(basicConfiguration.FEE()).multiply(new BigDecimal(ELA_TO_SELA)).longValue()));
         HdTxEntity.Output leftoutput = new HdTxEntity.Output();
         leftoutput.setAddr(inputs[0]);
         leftoutput.setAmt(left);
@@ -180,6 +210,10 @@ public class ElaService {
 
 
     private List<List<Map>> remakeHdEntity(HdTxEntity hdTxEntity){
+       return remakeHdEntity(hdTxEntity,null);
+    }
+
+    private List<List<Map>> remakeHdEntity(HdTxEntity hdTxEntity , String nodePrefix){
 
         String[] inputAddrs = hdTxEntity.getInputs();
 
@@ -188,9 +222,12 @@ public class ElaService {
         List<String> inputs = new ArrayList<>();
 
         for (int i = 0; i < inputAddrs.length; i++) {
-
-            List<String> utxoStr = getUtxoByAddr(inputAddrs[i],ChainType.MAIN_CHAIN);
-
+            List<String> utxoStr = null;
+            if(nodePrefix == null){
+                utxoStr = getUtxoByAddr(inputAddrs[i],ChainType.MAIN_CHAIN);
+            }else {
+                utxoStr = getFriendUtxoByAddr(inputAddrs[i],nodePrefix);
+            }
             List<Map> utxo = stripUtxo(utxoStr.get(0));
 
             if(utxo != null){
@@ -223,6 +260,18 @@ public class ElaService {
     public String getCurrentHeight(){
 
         return reqChainData(nodeConfiguration.getBlockHeight(ChainType.MAIN_CHAIN));
+    }
+
+    /**
+     * get the current height of blockchain
+     * @return
+     */
+    public String getFriendChainCurrentHeight(String shortName){
+        String node_prefix = (String)friendChainConfiguration.getConfig().get(shortName+"_prefix");
+        if (StrKit.isBlank(node_prefix)){
+            throw new ApiRequestDataException("No Such Friend chain");
+        }
+        return reqChainData(node_prefix +nodeConfiguration.getNakedBlockHeight());
     }
 
     /**
@@ -311,6 +360,28 @@ public class ElaService {
     }
 
     /**
+     * get address balance
+     * @param data
+     * @return
+     */
+    public String getFriendChainShortNameBalance(Map<String,String> data){
+
+        String address = data.get("address");
+        checkAddr(address);
+        String shortName = data.get("shortName");
+        String node_prefix = (String)friendChainConfiguration.getConfig().get(shortName+"_prefix");
+        if (StrKit.isBlank(node_prefix)){
+            throw new ApiRequestDataException("No Such Friend chain");
+        }
+
+        String result = HttpKit.get(node_prefix + nodeConfiguration.getNakedBalanceByAddr()+ address);
+
+        Map<String,Object>  resultMap = (Map<String,Object>) JSON.parse(result);
+
+        return JSON.toJSONString(new ReturnMsgEntity().setResult(resultMap.get("Result")).setStatus(retCodeConfiguration.SUCC()));
+    }
+
+    /**
      * get address utxos
      * @param address
      * @return
@@ -371,7 +442,7 @@ public class ElaService {
     }
 
     /**
-     * verify if message is signed by a public key
+     * verify if message is signed by a private key
      * @param entity
      * @return
      */
@@ -425,12 +496,41 @@ public class ElaService {
      * @throws Exception
      */
     private Map<String, Object> genHdTx(HdTxEntity hdTxEntity, List<List<Map>> utxoList) throws Exception {
+        return genHdTx(hdTxEntity,utxoList,null);
+    }
 
+    /**
+     * genHdTx info
+     * @param hdTxEntity info entity
+     * @param utxoList addrs utxo list
+     * @return
+     * @throws Exception
+     */
+    private Map<String, Object> genHdTx(HdTxEntity hdTxEntity, List<List<Map>> utxoList,String friendChainShortName) throws Exception {
+        Double transfer_fee = 0.0d;
+        Long satoshi = 0l;
+        if(friendChainShortName == null){
+            transfer_fee = basicConfiguration.FEE();
+            satoshi = basicConfiguration.ONE_ELA();
+        }else{
+            transfer_fee = Double.valueOf(friendChainConfiguration.getConfig().get(friendChainShortName+"_fee")+"");
+            if (transfer_fee == null){
+                throw new ApiRequestDataException("Invalid friend chain configuration");
+            }
+            satoshi = Long.valueOf(friendChainConfiguration.getConfig().get(friendChainShortName+"_satoshi")+"");
+            if (satoshi == null){
+                throw new ApiRequestDataException("Invalid friend chain configuration");
+            }
+        }
         String data = hdTxEntity.getMemo();
         HdTxEntity.Output[] outputs = hdTxEntity.getOutputs();
         double smAmt = 0;
         for (int i = 0; i < outputs.length; i++) {
-            smAmt += outputs[i].getAmt()/(basicConfiguration.ONE_ELA() * 1.0);
+            if(friendChainShortName == null){
+                smAmt += outputs[i].getAmt()/(satoshi * 1.0);
+            }else{
+                smAmt += outputs[i].getAmt()/(satoshi * 1.0);
+            }
         }
         Map<String, Object> paraListMap = new HashMap<>();
         List txList = new ArrayList<>();
@@ -448,7 +548,7 @@ public class ElaService {
             for (int i = 0; i < utxolm.size(); i++) {
                 index = i;
                 spendMoney += Double.valueOf(utxolm.get(i).get("Value") + "");
-                if (Math.round(spendMoney * basicConfiguration.ONE_ELA()) >= Math.round((smAmt + basicConfiguration.FEE()) * basicConfiguration.ONE_ELA())) {
+                if (Math.round(spendMoney * satoshi) >= Math.round((smAmt + transfer_fee) * satoshi)) {
                     hasEnoughFee = true;
                     break;
                 }
@@ -477,15 +577,15 @@ public class ElaService {
             utxoOutputsDetail.put("amount", outputs[i].getAmt());
             utxoOutputsArray.add(utxoOutputsDetail);
         }
-        double leftMoney = (spendMoney - (basicConfiguration.FEE() + smAmt));
-        if (Math.round(leftMoney * basicConfiguration.ONE_ELA()) > 0){
+        double leftMoney = (spendMoney - (transfer_fee + smAmt));
+        if (Math.round(leftMoney * satoshi) > 0){
             Map<String, Object> utxoOutputsDetail = new HashMap<>();
             utxoOutputsDetail.put("address", hdTxEntity.getInputs()[0]);
-            utxoOutputsDetail.put("amount", Math.round(leftMoney * basicConfiguration.ONE_ELA()));
+            utxoOutputsDetail.put("amount", Math.round(leftMoney * satoshi));
             utxoOutputsArray.add(utxoOutputsDetail);
         }
 
-        txListMap.put("Fee",basicConfiguration.FEE() * basicConfiguration.ONE_ELA());
+        txListMap.put("Fee",transfer_fee * satoshi);
         return paraListMap;
     }
 
@@ -511,6 +611,16 @@ public class ElaService {
         return l;
     }
 
+    private List<String> getFriendUtxoByAddr(List<String> addrs,String nodePrefix) {
+        List<String> rstlist = new ArrayList<>();
+        for(int i=0;i<addrs.size();i++){
+            String addr = addrs.get(i);
+            checkAddr(addr);
+            String result = HttpKit.get(nodePrefix + nodeConfiguration.getNakedUtxoByAddr() + addr);
+            rstlist.add(result);
+        }
+        return rstlist;
+    }
 
     private List<String> getUtxoByAddr(List<String> addrs,ChainType type) {
         List<String> rstlist = new ArrayList<>();
@@ -527,6 +637,12 @@ public class ElaService {
         List<String> addrLst = new ArrayList<>();
         addrLst.add(addr);
         return getUtxoByAddr(addrLst,type);
+    }
+
+    private List<String> getFriendUtxoByAddr(String addr,String nodePrefix) {
+        List<String> addrLst = new ArrayList<>();
+        addrLst.add(addr);
+        return getFriendUtxoByAddr(addrLst,nodePrefix);
     }
 
     @SuppressWarnings("unchecked")

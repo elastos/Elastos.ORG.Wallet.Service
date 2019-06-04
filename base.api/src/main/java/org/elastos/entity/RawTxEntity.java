@@ -16,6 +16,15 @@ public class RawTxEntity {
     private String data;
     private ChainType type;
     private String userAgent;
+    private String friendChainShortName;
+
+    public String getFriendChainShortName() {
+        return friendChainShortName;
+    }
+
+    public void setFriendChainShortName(String friendChainShortName) {
+        this.friendChainShortName = friendChainShortName;
+    }
 
     public String getUserAgent() {
         return userAgent;

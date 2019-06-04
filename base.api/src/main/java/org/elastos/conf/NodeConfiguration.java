@@ -54,12 +54,28 @@ public class NodeConfiguration {
         return prefix + blockTxByHeight;
     }
 
+    public String getNakedBlockTxByHeight() {
+        return blockTxByHeight;
+    }
+
     public String getBlockByHeight(ChainType type) {
         return prefix + blockByHeight;
     }
 
+    public String getNakedBlockByHeight() {
+        return blockByHeight;
+    }
+
+    public String getNakedBlockByHash() {
+        return blockByhash;
+    }
+
     public String getBlockByhash(ChainType type) {
         return prefix + blockByhash;
+    }
+
+    public String getNakedBlockHeight() {
+        return blockHeight;
     }
 
     public String getBlockHeight(ChainType type) {
@@ -74,9 +90,18 @@ public class NodeConfiguration {
         return prefix + transaction;
     }
 
+    public String getNakedTransaction(ChainType type) {
+        return transaction;
+    }
+
     public String getAsset(ChainType type) {
         return prefix + asset;
     }
+
+    public String getNakedBalanceByAddr() {
+        return balanceByAddr;
+    }
+
 
     public String getBalanceByAddr(ChainType type) {
         return prefix + balanceByAddr;
@@ -94,9 +119,17 @@ public class NodeConfiguration {
         return prefix + utxoByAddr;
     }
 
+    public String getNakedUtxoByAddr() {
+        return utxoByAddr;
+    }
+
     public String sendRawTransaction(ChainType type) {
         return prefix + sendRawTransaction;
     }
+    public String sendNakedRawTransaction() {
+        return sendRawTransaction;
+    }
+
 
     public String getTransactionPool(ChainType type) {
         return prefix + transactionPool;

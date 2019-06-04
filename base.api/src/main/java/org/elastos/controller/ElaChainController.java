@@ -6,6 +6,7 @@
  */
 package org.elastos.controller;
 
+import com.alibaba.fastjson.JSON;
 import org.elastos.entity.DidInfoEntity;
 import org.elastos.entity.HdWalletEntity;
 import org.elastos.entity.SignDataEntity;
@@ -14,7 +15,9 @@ import org.elastos.service.ElaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * clark
@@ -51,13 +54,19 @@ public class ElaChainController extends BaseController{
         return call(reqBody,HdWalletEntity.class,"genHdWallet",service);
     }
 
+    @RequestMapping(value = "/{friendChainShortName}/currHeight",method = RequestMethod.GET)
+    @ResponseBody
+    public String getFriendChainCurrentHeight(@PathVariable("friendChainShortName") String friendChainShortName){
+
+        return call(friendChainShortName,String.class,"getFriendChainCurrentHeight",service);
+    }
+
     @RequestMapping(value = "/currHeight",method = RequestMethod.GET)
     @ResponseBody
     public String getCurrentHeight(){
 
         return call(null,null,"getCurrentHeight",service);
     }
-
 
     @RequestMapping(value = "/tx/{txid}",method = RequestMethod.GET)
     @ResponseBody
@@ -101,11 +110,14 @@ public class ElaChainController extends BaseController{
         return call( hash ,String.class,"getTransactionByHash",service);
     }
 
-    @RequestMapping(value = "/balance/{address}",method = RequestMethod.GET)
+    @RequestMapping(value = "/{friendChainShortName}/balance/{address}",method = RequestMethod.GET)
     @ResponseBody
-    public String getBalance(@PathVariable("address") String address){
+    public String getFriendChainShortNameBalance(@PathVariable("address") String address,@PathVariable("friendChainShortName") String friendChainShortName){
 
-        return call( address ,String.class,"getBalance",service);
+        Map<String,Object> data = new HashMap<>();
+        data.put("address",address);
+        data.put("shortName",friendChainShortName);
+        return call(JSON.toJSONString(data),Map.class,"getFriendChainShortNameBalance",service);
     }
 
     @RequestMapping(value = "/utxos/{address}",method = RequestMethod.GET)
