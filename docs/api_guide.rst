@@ -10,7 +10,7 @@ Nodela has a Restful API with URL endpoints corresponding to actions that users 
 
 .. mainchain-api:
 
-Centralized Service API
+Elastos Mainchain Service API
 =================================
 using the following api ,we can easyly get a glimps of what is going on in the blockchain.
 
@@ -894,12 +894,6 @@ voter's statistics
             "status":200
         }
 
-.. local-service:
-
-Local Service API
-=================================
-If you are running code locally , you can use the following API .
-
 create a ELA wallet
 -----------------------------------------
 generate a elastos wallet
@@ -1316,7 +1310,7 @@ using this api you can transfer money from mainchain to did sidechain.
 
 .. friendchain-service:
 
-Friend Chain Service API
+Elastos FriendChain Service API
 =================================
 First add friend chain configuration in the configuration file::
 
