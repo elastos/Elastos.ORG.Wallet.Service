@@ -195,6 +195,9 @@ public class ElaService {
             spend += outputs[i].getAmt();
         }
         long left = total - spend - Math.round(new BigDecimal(basicConfiguration.FEE()).multiply(new BigDecimal(ELA_TO_SELA)).longValue());
+        if (left < 0){
+            throw new ApiRequestDataException("Not Enough UTXO");
+        }
         HdTxEntity.Output leftoutput = new HdTxEntity.Output();
         leftoutput.setAddr(inputs[0]);
         leftoutput.setAmt(left);
