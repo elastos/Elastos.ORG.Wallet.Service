@@ -100,7 +100,25 @@ public class ElaService {
      * @return
      */
     public String getTxByTxId(String txid){
-        return reqChainData(nodeConfiguration.sendRawTransaction(ChainType.MAIN_CHAIN)+ "/" + txid);
+
+        String result = HttpKit.get(nodeConfiguration.sendRawTransaction(ChainType.MAIN_CHAIN)+ "/" + txid);
+
+        Map<String,Object>  resultMap = (Map<String,Object>) JSON.parse(result);
+
+        if("0".equals(resultMap.get("Error")+"")){
+            return JSON.toJSONString(new ReturnMsgEntity().setResult(resultMap.get("Result")).setStatus(retCodeConfiguration.SUCC()));
+        }else{
+            result = HttpKit.get(nodeConfiguration.getTransactionPool(ChainType.MAIN_CHAIN));
+            resultMap = (Map<String,Object>) JSON.parse(result);
+            List<Map<String,Object>> lm = (List)resultMap.get("Result");
+            for(int i=0;i<lm.size();i++){
+                Map<String,Object> m = lm.get(i);
+                if(m.containsValue(txid)){
+                    return JSON.toJSONString(new ReturnMsgEntity().setResult(m).setStatus(retCodeConfiguration.SUCC()));
+                }
+            }
+            return JSON.toJSONString(new ReturnMsgEntity().setResult("Unknown Transaction").setStatus(retCodeConfiguration.SUCC()));
+        }
     }
 
     public String sendRawTx(RawTxEntity rawTxEntity){
