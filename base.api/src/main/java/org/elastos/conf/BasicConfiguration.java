@@ -24,16 +24,6 @@ public class BasicConfiguration {
     private double CROSS_CHAIN_FEE;
     private boolean CROSS_DOMAIN;
 
-    public void setFILTER_ELA_VALUE(double FILTER_ELA_VALUE) {
-        this.FILTER_ELA_VALUE = FILTER_ELA_VALUE;
-    }
-
-    public double getFILTER_ELA_VALUE() {
-        return FILTER_ELA_VALUE;
-    }
-
-    private double FILTER_ELA_VALUE;
-
     public int getLIMIT_THRESHOLD() {
         return LIMIT_THRESHOLD;
     }

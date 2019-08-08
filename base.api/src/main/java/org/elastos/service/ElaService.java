@@ -201,55 +201,32 @@ public class ElaService {
      */
     public String genVoteHdTx(HdTxEntity hdTxEntity) throws Exception {
 
-        String[] inputs = hdTxEntity.getInputs();
-        long total = 0;
-        for(int i=0;i< inputs.length;i++){
-            String input = inputs[i];
-            Map<String,Object> balance = (Map)JSON.parse(getBalance(input));
-            total += Math.round(Double.valueOf(balance.get("result") +"") * ELA_TO_SELA);
-        }
-        long spend = 0;
-        HdTxEntity.Output[] outputs = hdTxEntity.getOutputs();
-        for(int i=0;i< outputs.length;i++){
-            spend += outputs[i].getAmt();
-        }
-        long left = total - spend - Math.round(new BigDecimal(basicConfiguration.FEE()).multiply(new BigDecimal(ELA_TO_SELA)).longValue());
-        if (left < 0){
-            throw new ApiRequestDataException("Not Enough UTXO");
-        }
-        Long[] filtered = new Long[1];
-        filtered[0] = 0l;
-        List<List<Map>> utxoList = remakeVoteHdEntity(hdTxEntity,filtered);
-        HdTxEntity.Output leftoutput = new HdTxEntity.Output();
-        leftoutput.setAddr(inputs[0]);
-        leftoutput.setAmt(left - filtered[0]);
-        HdTxEntity.Output[] desc = new HdTxEntity.Output[outputs.length+1];
-        System.arraycopy(outputs,0,desc,0,outputs.length);
-        desc[desc.length -1] = leftoutput;
-        hdTxEntity.setOutputs(desc);
+//        String[] inputs = hdTxEntity.getInputs();
+//        long total = 0;
+//        for(int i=0;i< inputs.length;i++){
+//            String input = inputs[i];
+//            Map<String,Object> balance = (Map)JSON.parse(getBalance(input));
+//            total += Math.round(Double.valueOf(balance.get("result") +"") * ELA_TO_SELA);
+//        }
+//        long spend = 0;
+//        HdTxEntity.Output[] outputs = hdTxEntity.getOutputs();
+//        for(int i=0;i< outputs.length;i++){
+//            spend += outputs[i].getAmt();
+//        }
+//        long left = total - spend - Math.round(new BigDecimal(basicConfiguration.FEE()).multiply(new BigDecimal(ELA_TO_SELA)).longValue());
+//        if (left < 0){
+//            throw new ApiRequestDataException("Not Enough UTXO");
+//        }
+        List<List<Map>> utxoList = remakeHdEntity(hdTxEntity);
+//        HdTxEntity.Output leftoutput = new HdTxEntity.Output();
+//        leftoutput.setAddr(inputs[0]);
+//        leftoutput.setAmt(left - filtered[0]);
+//        HdTxEntity.Output[] desc = new HdTxEntity.Output[outputs.length+1];
+//        System.arraycopy(outputs,0,desc,0,outputs.length);
+//        desc[desc.length -1] = leftoutput;
+//        hdTxEntity.setOutputs(desc);
 //        logger.debug(JSON.toJSONString(new ReturnMsgEntity().setResult(genHdTx(hdTxEntity, utxoList)).setStatus(retCodeConfiguration.SUCC())));
         return JSON.toJSONString(new ReturnMsgEntity().setResult(genHdTx(hdTxEntity, utxoList,true)).setStatus(retCodeConfiguration.SUCC()));
-    }
-
-    private List<List<Map>> remakeVoteHdEntity(HdTxEntity hdTxEntity,Long[] filteredDataHolder){
-
-        String[] inputAddrs = hdTxEntity.getInputs();
-
-        List<List<Map>> utxoList = new ArrayList<>();
-
-        List<String> inputs = new ArrayList<>();
-
-        for (int i = 0; i < inputAddrs.length; i++) {
-            List<String> utxoStr = getUtxoByAddr(inputAddrs[i],ChainType.MAIN_CHAIN);
-            List<Map> utxo = stripVoteUtxo(utxoStr.get(0),filteredDataHolder);
-            if(utxo != null){
-                Collections.sort(utxo,new UtxoComparator());
-                inputs.add(inputAddrs[i]);
-                utxoList.add(utxo);
-            }
-        }
-        hdTxEntity.setInputs(inputs.toArray(new String[inputs.size()]));
-        return utxoList;
     }
 
 
@@ -614,54 +591,72 @@ public class ElaService {
         boolean hasEnoughFee = false;
         List utxoInputsArray = new ArrayList<>();
         txListMap.put("UTXOInputs", utxoInputsArray);
-        boolean isThresholdLimitReach = false;
         int limit = basicConfiguration.getLIMIT_THRESHOLD();
-        if (isVoteTx){
-            limit = 99999999;
-        }
         for (int j = 0; j < utxoList.size(); j++) {
+            boolean isThresholdLimitReach = false;
             List<Map> utxolm = utxoList.get(j);
             String addr = hdTxEntity.getInputs()[j];
             if (!isThresholdLimitReach){
-                for (int i = 0; i < utxolm.size(); i++) {
-                    index = i;
-                    spendMoney += Double.valueOf(utxolm.get(i).get("Value") + "");
-                    if (Math.round(spendMoney * satoshi) >= Math.round((smAmt + transfer_fee) * satoshi)) {
-                        hasEnoughFee = true;
-                        break;
+                if(isVoteTx){
+                    for (int i = utxolm.size() - 1; i >= 0; i--) {
+                        index = i;
+                        spendMoney += Double.valueOf(utxolm.get(i).get("Value") + "");
+                        if (Math.round(spendMoney * satoshi) >= Math.round((smAmt + transfer_fee) * satoshi)) {
+                            hasEnoughFee = true;
+                        }
+                        if ((utxolm.size() - index) == limit){
+                            break;
+                        }
                     }
-                    if (index == limit){
-                        isThresholdLimitReach = true;
-                        break;
+                    for (int i = utxolm.size()-1; i >= index; i--) {
+                        Map<String, Object> utxoInputsDetail = new HashMap<>();
+                        Map<String, Object> utxoM = utxolm.get(i);
+                        utxoInputsDetail.put("txid", utxoM.get("Txid"));
+                        utxoInputsDetail.put("index", utxoM.get("Index"));
+                        utxoInputsDetail.put("address", addr);
+                        utxoInputsArray.add(utxoInputsDetail);
                     }
-                }
-                for (int i = 0; i <= index; i++) {
-                    Map<String, Object> utxoInputsDetail = new HashMap<>();
-                    Map<String, Object> utxoM = utxolm.get(i);
-                    utxoInputsDetail.put("txid", utxoM.get("Txid"));
-                    utxoInputsDetail.put("index", utxoM.get("Index"));
-                    utxoInputsDetail.put("address", addr);
-                    utxoInputsArray.add(utxoInputsDetail);
-                }
-            }
+                }else{
+                    for (int i = 0; i < utxolm.size(); i++) {
+                        index = i;
+                        spendMoney += Double.valueOf(utxolm.get(i).get("Value") + "");
+                        if (Math.round(spendMoney * satoshi) >= Math.round((smAmt + transfer_fee) * satoshi)) {
+                            hasEnoughFee = true;
+                            break;
+                        }
+                        if (index + 1 == limit){
+                            isThresholdLimitReach = true;
+                            break;
+                        }
+                    }
+                    for (int i = 0; i <= index; i++) {
+                        Map<String, Object> utxoInputsDetail = new HashMap<>();
+                        Map<String, Object> utxoM = utxolm.get(i);
+                        utxoInputsDetail.put("txid", utxoM.get("Txid"));
+                        utxoInputsDetail.put("index", utxoM.get("Index"));
+                        utxoInputsDetail.put("address", addr);
+                        utxoInputsArray.add(utxoInputsDetail);
+                    }
 
-            if(isThresholdLimitReach) {
-                index = limit + 1;
-                for (int i = utxolm.size()-1; i > limit; i--) {
-                    index = i;
-                    spendMoney += Double.valueOf(utxolm.get(i).get("Value") + "");
-                    if (Math.round(spendMoney * satoshi) >= Math.round((smAmt + transfer_fee) * satoshi)) {
-                        hasEnoughFee = true;
-                        break;
+                    if(isThresholdLimitReach) {
+                        index = limit;
+                        for (int i = utxolm.size()-1; i >= limit; i--) {
+                            index = i;
+                            spendMoney += Double.valueOf(utxolm.get(i).get("Value") + "");
+                            if (Math.round(spendMoney * satoshi) >= Math.round((smAmt + transfer_fee) * satoshi)) {
+                                hasEnoughFee = true;
+                                break;
+                            }
+                        }
+                        for (int i = utxolm.size()-1; i >= index; i--) {
+                            Map<String, Object> utxoInputsDetail = new HashMap<>();
+                            Map<String, Object> utxoM = utxolm.get(i);
+                            utxoInputsDetail.put("txid", utxoM.get("Txid"));
+                            utxoInputsDetail.put("index", utxoM.get("Index"));
+                            utxoInputsDetail.put("address", addr);
+                            utxoInputsArray.add(utxoInputsDetail);
+                        }
                     }
-                }
-                for (int i = utxolm.size()-1; i >= index; i--) {
-                    Map<String, Object> utxoInputsDetail = new HashMap<>();
-                    Map<String, Object> utxoM = utxolm.get(i);
-                    utxoInputsDetail.put("txid", utxoM.get("Txid"));
-                    utxoInputsDetail.put("index", utxoM.get("Index"));
-                    utxoInputsDetail.put("address", addr);
-                    utxoInputsArray.add(utxoInputsDetail);
                 }
             }
 
@@ -710,39 +705,6 @@ public class ElaService {
         List<Map> l = null;
         if (lm != null) {
             l = (List<Map>) lm.get(0).get("Utxo");
-        }
-        return l;
-    }
-
-    private List<Map> stripVoteUtxo(String result,Long[] dataHolder) {
-        Long filtered = 0l;
-        Map m = JsonUtil.jsonToMap(JSONObject.fromObject(result));
-        List<Map> origin = null;
-        try {
-            origin = ((List<Map>) m.get("Result"));
-            if(origin != null){
-                List<Map> lmutxo = ((List<Map>) origin.get(0).get("Utxo"));
-                for(int i=0; i < lmutxo.size();i++){
-                    Long v = Math.round(new BigDecimal(lmutxo.get(i).get("Value")+"").setScale(8,RoundingMode.HALF_UP).doubleValue() * 100000000l);
-                    if (v < basicConfiguration.getFILTER_ELA_VALUE() * 100000000l){
-                        filtered += v;
-                        lmutxo.remove(i);
-                        i--;
-                    }
-                }
-            }
-            dataHolder[0] += filtered;
-        } catch (Exception ex) {
-            logger.warn(" address has no utxo yet .");
-            return null;
-        }
-        List<Map> l = null;
-        if (origin != null && origin.size() > 0) {
-            l = (List<Map>) origin.get(0).get("Utxo");
-        }
-        if (l != null && l.size() == 0){
-            logger.warn(" filtered all the utxo .");
-            return null;
         }
         return l;
     }
