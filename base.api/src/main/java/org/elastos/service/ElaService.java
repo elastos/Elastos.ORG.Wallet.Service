@@ -780,7 +780,8 @@ public class ElaService {
         String txHash = (String) rawM.get("txHash");
         logger.info("rawTx:" + rawTx + ", txHash :" + txHash);
 
-        return sendTx(rawTx,type);
+        return null;
+//        return sendTx(rawTx,type);
     }
 
     public boolean voteValidate(List<String> sdr , List<String> rcv){
