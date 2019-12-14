@@ -28,9 +28,6 @@ import java.util.Map;
  */
 @RestController
 public class ElaOfflineController extends BaseController{
-
-    private Logger logger = LoggerFactory.getLogger(ElaOfflineController.class);
-
     @Autowired
     private ElaService elaService;
 
@@ -89,7 +86,8 @@ public class ElaOfflineController extends BaseController{
     public String genFriendChainTxData(@RequestAttribute String reqBody ,@PathVariable("friendChainShortName") String friendChainShortName){
         Map<String,Object> data = (Map<String, Object>) JSON.parse(reqBody);
         data.put("friendChainShortName",friendChainShortName);
-        return call(JSON.toJSONString(data),HdTxEntity.class,"genFriendChainHdTx",elaService);
+        String ret = call(JSON.toJSONString(data),HdTxEntity.class,"genFriendChainHdTx",elaService);
+        return ret;
     }
 
     /**
