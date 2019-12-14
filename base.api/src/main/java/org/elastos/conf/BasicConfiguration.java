@@ -24,6 +24,16 @@ public class BasicConfiguration {
     private double CROSS_CHAIN_FEE;
     private boolean CROSS_DOMAIN;
 
+    public int getLIMIT_THRESHOLD() {
+        return LIMIT_THRESHOLD;
+    }
+
+    public void setLIMIT_THRESHOLD(int LIMIT_THRESHOLD) {
+        this.LIMIT_THRESHOLD = LIMIT_THRESHOLD;
+    }
+
+    private int  LIMIT_THRESHOLD;
+
     public boolean isCROSS_DOMAIN() {
         return CROSS_DOMAIN;
     }

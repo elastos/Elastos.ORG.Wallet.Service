@@ -29,6 +29,8 @@ basic.ONE_ELA            = 100000000
 basic.FEE                = 0.0000486
 basic.CROSS_CHAIN_FEE    = 0.0001
 basic.CROSS_DOMAIN       = false
+basic.LIMIT_THRESHOLD    = 100
+
 
 ## application
 server.port              = 8080
