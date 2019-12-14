@@ -8,6 +8,7 @@ package org.elastos.service;
 
 import java.io.*;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 import com.alibaba.fastjson.JSON;
@@ -693,7 +694,7 @@ public class ElaService {
         String memo = param.getMemo();
         ChainType type = param.getType();
         String response = gen(totalAmt, sdrPrivs , sdrAddrs,
-                addrList, valList, memo,type,null);
+                addrList, valList, memo,type,null,null);
         Object orst =((Map<String, Object>) JSON.parse(response)).get("Result");
         if ((orst instanceof Map) == false){
             throw new ApiRequestDataException("Not valid request Data");
@@ -726,13 +727,21 @@ public class ElaService {
         List<Double> valList = new ArrayList<>();
         Double totalAmt = 0.0;
         List<List<String>> candidatePublicKeys = new ArrayList<>();
+        List<List<String>> candidatesCrcDids = new ArrayList<>();
         for(int i=0;i<rcv.size();i++){
             Map m = rcv.get(i);
             addrList.add((String)m.get("address"));
             Double tmpAmt = Double.valueOf((String)m.get("amount"));
             valList.add(tmpAmt);
             totalAmt += tmpAmt;
-            candidatePublicKeys.add((ArrayList<String>)m.get("candidatePublicKeys"));
+            Object cp = m.get("candidatePublicKeys");
+            if (cp != null){
+                candidatePublicKeys.add((ArrayList<String>)cp);
+            }
+            Object cpc = m.get("candidatesCrcDids");
+            if (cpc != null){
+                candidatesCrcDids.add((ArrayList<String>)cpc);
+            }
         }
         List<String> sdrAddrs = new ArrayList<>();
         List<String> sdrPrivs = new ArrayList<>();
@@ -749,7 +758,7 @@ public class ElaService {
         String memo = param.getMemo();
         ChainType type = param.getType();
         String response = gen(totalAmt, sdrPrivs , sdrAddrs,
-                addrList, valList, memo,type,candidatePublicKeys);
+                addrList, valList, memo,type,candidatePublicKeys,candidatesCrcDids);
         Object orst =((Map<String, Object>) JSON.parse(response)).get("Result");
         if ((orst instanceof Map) == false){
             throw new ApiRequestDataException("Not valid request Data");
@@ -773,7 +782,7 @@ public class ElaService {
      * @throws Exception
      */
     @SuppressWarnings("rawtypes")
-    public String gen(double smAmt , List<String> prvKeys , List<String> sdrAddrs ,List<String> addrs , List<Double> amts , String data,ChainType type,List<List<String>> candidatePublicKeys) throws Exception {
+    public String gen(double smAmt , List<String> prvKeys , List<String> sdrAddrs ,List<String> addrs , List<Double> amts , String data,ChainType type,List<List<String>> candidatePublicKeys,List<List<String>> candidatesCrcDids) throws Exception {
 
         List<String> utxoStrLst = getUtxoByAddr(sdrAddrs,type);
         List<List<Map>> utxoTotal = new ArrayList<>();
@@ -791,7 +800,7 @@ public class ElaService {
             return genCrossTx(smAmt,utxoTotal,prvKeys, sdrAddrs, addrs, amts, data,type);
         }
 
-        return genTx(smAmt, utxoTotal, prvKeys, sdrAddrs, addrs, amts, data,candidatePublicKeys);
+        return genTx(smAmt, utxoTotal, prvKeys, sdrAddrs, addrs, amts, data,candidatePublicKeys,candidatesCrcDids);
     }
 
     /**
@@ -1017,7 +1026,7 @@ public class ElaService {
      * @throws Exception
      */
     @SuppressWarnings({ "rawtypes", "unchecked", "static-access" })
-    public String genTx(double smAmt , List<List<Map>> utxoTotal , List<String> prvKeys , List<String> sdrAddrs ,List<String> addrs , List<Double> amts , String data,List<List<String>> candidatePublicKeys) throws Exception {
+    public String genTx(double smAmt , List<List<Map>> utxoTotal , List<String> prvKeys , List<String> sdrAddrs ,List<String> addrs , List<Double> amts , String data,List<List<String>> candidatePublicKeys,List<List<String>> candidatesCrcDids) throws Exception {
 
         if(addrs == null || addrs.size() == 0) {
             throw new RuntimeException("output can not be blank");
@@ -1080,12 +1089,34 @@ public class ElaService {
             Map<String,Object> utxoOutputsDetail = new HashMap<>();
             utxoOutputsDetail.put("address", addrs.get(i));
             utxoOutputsDetail.put("amount", Math.round(amts.get(i) * basicConfiguration.ONE_ELA()));
-            if(candidatePublicKeys != null && candidatePublicKeys.size() > 0){
-                Map<String,Object> payload = new HashMap<>();
+            Map<String,Object> payload = new HashMap<>();
+            if((candidatePublicKeys != null && candidatePublicKeys.size() > 0)){
                 payload.put("type","vote");
-                payload.put("candidatePublicKeys",candidatePublicKeys.get(i));
-                utxoOutputsDetail.put("payload",payload);
+                List<Map<String,Object>> candidates = new ArrayList<Map<String,Object>>();
+                List<String> producers = candidatePublicKeys.get(i);
+                for (int m = 0;m < producers.size();m++){
+                    Map<String,Object> tm = new HashMap<>();
+                    tm.put("producer_public_key",producers.get(m));
+                    tm.put("value",Math.round(amts.get(i) * basicConfiguration.ONE_ELA()));
+                    candidates.add(tm);
+                }
+
+                payload.put("candidatePublicKeys",candidates);
             }
+
+            if(candidatesCrcDids != null && candidatesCrcDids.size() > 0){
+                payload.put("type","vote");
+                List<Map<String,Object>> candidatesCrc = new ArrayList<Map<String,Object>>();
+                List<String> dids = candidatesCrcDids.get(i);
+                for (int m = 0;m < dids.size();m++){
+                    Map<String,Object> tm = new HashMap<>();
+                    tm.put("did",dids.get(m));
+                    tm.put("value",Math.round(new BigDecimal(amts.get(i) / dids.size()).setScale(8, RoundingMode.FLOOR).doubleValue() * basicConfiguration.ONE_ELA()));
+                    candidatesCrc.add(tm);
+                }
+                payload.put("candidateCrcs",candidatesCrc);
+            }
+            utxoOutputsDetail.put("payload",payload);
             utxoOutputsArray.add(utxoOutputsDetail);
         }
         if(candidatePublicKeys != null && !voteValidate(sdrAddrs.subList(0,utxoIndex+1),addrs)){
