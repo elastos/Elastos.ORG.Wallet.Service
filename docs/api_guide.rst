@@ -1224,7 +1224,8 @@ Dpos Voting using private key
 using private key to vote your producers
 
 .. note::
-    the receiver address must be one of the senders address.
+    the receiver address must be one of the senders address,for now the cr votes are evenly divided to the cr candidates.
+    will be modified to each cr candidates can have their own specific votes .
 
 .. http:post:: /api/1/dpos/vote
 
@@ -1238,16 +1239,22 @@ using private key to vote your producers
       {
           "sender":[
               {
-                  "address":"ELbKQrj8DTYn2gU7KBejcNWb4ix4EAGDmy",
-                  "privateKey":"7EF82C937B296AE3FCE84D79D70B8FA0B0E94A0835A68C26C17036A7B3358834"
+                  "address":"EbxU18T3M9ufnrkRY7NLt6sKyckDW4VAsA",
+                  "privateKey":"C740869D015E674362B1F441E3EDBE1CBCF4FE8B709AA1A77E5CCA2C92BAF99D"
               }
           ],
-          "memo":"测试",
           "receiver":[
               {
-                  "address":"ELbKQrj8DTYn2gU7KBejcNWb4ix4EAGDmy",
-                  "amount":"0.032407",
-                  "candidatePublicKeys":["033c495238ca2b6bb8b7f5ae172363caea9a55cf245ffb3272d078126b1fe3e7cd"]
+                  "address":"EbxU18T3M9ufnrkRY7NLt6sKyckDW4VAsA",
+                  "amount":"0.00001234",
+                  "candidatePublicKeys":[
+      				"02fe6d1f9e1e03ef7e41bf0cb65eea4f7c6e8f5faa902455b723b997a7e6ded40b",
+      "028b6e4d5c85ce549cefb8987f61f3e50ae385737eadbefc3f90f70d6d1d530472",
+      "030f74c89df33e19d0d657eead78ff1fe39f4e83ba56837d2e40b12a5e61cda8f5"
+                  ],"candidatesCrcDids":[
+      				"ih1kcYd76SvHPsUrBM72xkAk5Htkhz7xv8",
+      				"iXuss6uqEdaSB6aho9SpnLouu3EEaiBfsE"
+      			]
               }
           ]
       }
