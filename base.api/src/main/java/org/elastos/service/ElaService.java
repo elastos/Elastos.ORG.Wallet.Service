@@ -700,9 +700,9 @@ public class ElaService {
             lm = ((List<Map>) m.get("Result"));
         } catch (Exception ex) {
             logger.warn(" address has no utxo yet .");
-            return null;
+            return new ArrayList<Map>();
         }
-        List<Map> l = null;
+        List<Map> l = new ArrayList<>();
         if (lm != null) {
             l = (List<Map>) lm.get(0).get("Utxo");
         }
@@ -1178,6 +1178,7 @@ public class ElaService {
                 }
 
                 payload.put("candidatePublicKeys",candidates);
+                utxoOutputsDetail.put("payload",payload);
             }
 
             if(candidatesCrcDids != null && candidatesCrcDids.size() > 0){
@@ -1191,8 +1192,9 @@ public class ElaService {
                     candidatesCrc.add(tm);
                 }
                 payload.put("candidateCrcs",candidatesCrc);
+                utxoOutputsDetail.put("payload",payload);
             }
-            utxoOutputsDetail.put("payload",payload);
+
             utxoOutputsArray.add(utxoOutputsDetail);
         }
         if(candidatePublicKeys != null && !voteValidate(sdrAddrs.subList(0,utxoIndex+1),addrs)){
