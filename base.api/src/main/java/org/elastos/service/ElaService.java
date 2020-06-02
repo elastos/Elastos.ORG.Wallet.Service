@@ -383,15 +383,13 @@ public class ElaService {
 
         }
 
-        Map m = ((List<Map>)resultMap.get("Result")).get(0);
-
-        List<Map> lm = (List<Map>)m.get("Utxo");
+        List<Map> lm = (List<Map>)resObj;
 
         BigDecimal total = new BigDecimal("0.0");
 
         for(int i=0;i<lm.size();i++){
             Map md = lm.get(i);
-            BigDecimal v = new BigDecimal((String)md.get("Value"));
+            BigDecimal v = new BigDecimal((String)((List<Map>)md.get("UTXO")).get(0).get("Value"));
             total = total.add(v);
         }
 
@@ -702,11 +700,11 @@ public class ElaService {
             logger.warn(" address has no utxo yet .");
             return new ArrayList<Map>();
         }
-        List<Map> l = new ArrayList<>();
-        if (lm != null) {
-            l = (List<Map>) lm.get(0).get("Utxo");
-        }
-        return l;
+//        List<Map> l = new ArrayList<>();
+//        if (lm != null) {
+//            l = (List<Map>) lm.get(0).get("UTXO");
+//        }
+        return lm;
     }
 
     private List<String> getFriendUtxoByAddr(List<String> addrs,String nodePrefix) {
@@ -1126,7 +1124,7 @@ public class ElaService {
             utxoIndex = z;
             for( int i=0; i<utxolm.size(); i++) {
                 index = i;
-                spendMoney += Double.valueOf(utxolm.get(i).get("Value")+"");
+                spendMoney += Double.valueOf(((List<Map>)utxolm.get(i).get("UTXO")).get(0).get("Value")+"");
                 if( Math.round(spendMoney * basicConfiguration.ONE_ELA()) >= Math.round((smAmt + basicConfiguration.FEE()) * basicConfiguration.ONE_ELA())) {
                     hasEnoughFee = true;
                     break out;
@@ -1152,8 +1150,8 @@ public class ElaService {
             for(int i=0;i<=subIndex;i++) {
                 Map<String,Object> utxoInputsDetail = new HashMap<>();
                 Map<String,Object> utxoM = utxolm.get(i);
-                utxoInputsDetail.put("txid",  utxoM.get("Txid"));
-                utxoInputsDetail.put("index",  utxoM.get("Index"));
+                utxoInputsDetail.put("txid", ((List<Map>)utxoM.get("UTXO")).get(0).get("Txid"));
+                utxoInputsDetail.put("index", ((List<Map>)utxoM.get("UTXO")).get(0).get("Index"));
                 utxoInputsDetail.put("privateKey",  privateKey);
                 utxoInputsDetail.put("address",  addr);
                 utxoInputsArray.add(utxoInputsDetail);

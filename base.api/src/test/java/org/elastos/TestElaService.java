@@ -111,10 +111,11 @@ public class TestElaService {
 
     @Test
     public void testWallets(){
-        String privKey = Ela.getPrivateKey();
+        String privKey = "93045a06a0cee2e28eb4715501644486b710485612800ab3e9dc5c143e3fc49e";
+        String publicKey = Ela.getPublicFromPrivate(privKey);
         String addresss = Ela.getAddressFromPrivate(privKey);
         String did = Ela.getIdentityIDFromPrivate(privKey);
-        System.out.println(addresss + "  " + did);
+        System.out.println(addresss + "  " + did + " " + publicKey);
     }
 
     @Test
