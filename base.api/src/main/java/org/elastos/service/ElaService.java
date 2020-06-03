@@ -264,13 +264,13 @@ public class ElaService {
     private class UtxoComparator implements Comparator<Map>  {
         public int compare(Map a, Map b)
         {
-            if (new BigDecimal(a.get("Value")+"").setScale(8, RoundingMode.HALF_UP).doubleValue() >
-                    new BigDecimal(b.get("Value")+"").setScale(8, RoundingMode.HALF_UP).doubleValue()){
+            if (new BigDecimal(((List<Map>)a.get("UTXO")).get(0).get("Value")+"").setScale(8, RoundingMode.HALF_UP).doubleValue() >
+                    new BigDecimal(((List<Map>)b.get("UTXO")).get(0).get("Value")+"").setScale(8, RoundingMode.HALF_UP).doubleValue()){
                 return 1;
             }
 
-            if (new BigDecimal(a.get("Value")+"").setScale(8, RoundingMode.HALF_UP).doubleValue() ==
-                    new BigDecimal(b.get("Value")+"").setScale(8, RoundingMode.HALF_UP).doubleValue()){
+            if (new BigDecimal(((List<Map>)a.get("UTXO")).get(0).get("Value")+"").setScale(8, RoundingMode.HALF_UP).doubleValue() ==
+                    new BigDecimal(((List<Map>)b.get("UTXO")).get(0).get("Value")+"").setScale(8, RoundingMode.HALF_UP).doubleValue()){
                 return 0;
             }
 
@@ -598,7 +598,7 @@ public class ElaService {
                 if(isVoteTx){
                     for (int i = utxolm.size() - 1; i >= 0; i--) {
                         index = i;
-                        spendMoney += Double.valueOf(utxolm.get(i).get("Value") + "");
+                        spendMoney += Double.valueOf(((List<Map>)utxolm.get(i).get("UTXO")).get(0).get("Value")+"");
                         if (Math.round(spendMoney * satoshi) >= Math.round((smAmt + transfer_fee) * satoshi)) {
                             hasEnoughFee = true;
                         }
@@ -609,15 +609,15 @@ public class ElaService {
                     for (int i = utxolm.size()-1; i >= index; i--) {
                         Map<String, Object> utxoInputsDetail = new HashMap<>();
                         Map<String, Object> utxoM = utxolm.get(i);
-                        utxoInputsDetail.put("txid", utxoM.get("Txid"));
-                        utxoInputsDetail.put("index", utxoM.get("Index"));
+                        utxoInputsDetail.put("txid", ((List<Map>)utxoM.get("UTXO")).get(0).get("Txid"));
+                        utxoInputsDetail.put("index", ((List<Map>)utxoM.get("UTXO")).get(0).get("Index"));
                         utxoInputsDetail.put("address", addr);
                         utxoInputsArray.add(utxoInputsDetail);
                     }
                 }else{
                     for (int i = 0; i < utxolm.size(); i++) {
                         index = i;
-                        spendMoney += Double.valueOf(utxolm.get(i).get("Value") + "");
+                        spendMoney += Double.valueOf(((List<Map>)utxolm.get(i).get("UTXO")).get(0).get("Value")+"");
                         if (Math.round(spendMoney * satoshi) >= Math.round((smAmt + transfer_fee) * satoshi)) {
                             hasEnoughFee = true;
                             break;
@@ -630,8 +630,8 @@ public class ElaService {
                     for (int i = 0; i <= index; i++) {
                         Map<String, Object> utxoInputsDetail = new HashMap<>();
                         Map<String, Object> utxoM = utxolm.get(i);
-                        utxoInputsDetail.put("txid", utxoM.get("Txid"));
-                        utxoInputsDetail.put("index", utxoM.get("Index"));
+                        utxoInputsDetail.put("txid", ((List<Map>)utxoM.get("UTXO")).get(0).get("Txid"));
+                        utxoInputsDetail.put("index", ((List<Map>)utxoM.get("UTXO")).get(0).get("Index"));
                         utxoInputsDetail.put("address", addr);
                         utxoInputsArray.add(utxoInputsDetail);
                     }
@@ -640,7 +640,7 @@ public class ElaService {
                         index = limit;
                         for (int i = utxolm.size()-1; i >= limit; i--) {
                             index = i;
-                            spendMoney += Double.valueOf(utxolm.get(i).get("Value") + "");
+                            spendMoney += Double.valueOf(((List<Map>)utxolm.get(i).get("UTXO")).get(0).get("Value")+"");
                             if (Math.round(spendMoney * satoshi) >= Math.round((smAmt + transfer_fee) * satoshi)) {
                                 hasEnoughFee = true;
                                 break;
@@ -649,8 +649,8 @@ public class ElaService {
                         for (int i = utxolm.size()-1; i >= index; i--) {
                             Map<String, Object> utxoInputsDetail = new HashMap<>();
                             Map<String, Object> utxoM = utxolm.get(i);
-                            utxoInputsDetail.put("txid", utxoM.get("Txid"));
-                            utxoInputsDetail.put("index", utxoM.get("Index"));
+                            utxoInputsDetail.put("txid", ((List<Map>)utxoM.get("UTXO")).get(0).get("Txid"));
+                            utxoInputsDetail.put("index", ((List<Map>)utxoM.get("UTXO")).get(0).get("Index"));
                             utxoInputsDetail.put("address", addr);
                             utxoInputsArray.add(utxoInputsDetail);
                         }
